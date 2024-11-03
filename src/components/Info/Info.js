@@ -1,20 +1,16 @@
 import styles from './Info.module.css';
 import PropTypes from 'prop-types';
-import { store } from '../../store';
-import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import {
+	currentPlayerSelector,
+	isDrawSelector,
+	isGameEndedSelector,
+} from '../../selectors';
 
 export const InfoLayout = () => {
-	const { currentPlayer, isGameEnded, isDraw } = store.getState();
-	const [state, setState] = useState(store.getState());
-
-	useEffect(() => {
-		const unsubscribe = store.subscribe(() => {
-			setState(store.getState());
-		});
-		return () => {
-			unsubscribe();
-		};
-	}, []);
+	const currentPlayer = useSelector(currentPlayerSelector);
+	const isGameEnded = useSelector(isGameEndedSelector);
+	const isDraw = useSelector(isDrawSelector);
 
 	return (
 		<h1 className={styles.info}>

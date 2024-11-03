@@ -1,7 +1,13 @@
 import styles from './Button.module.css';
 import PropTypes from 'prop-types';
-import { store } from '../../store';
-import { useState, useEffect } from 'react';
+
+import {
+	isGameEndedSelector,
+	currentPlayerSelector,
+	isDrawSelector,
+	fieldsSelector,
+} from '../../selectors';
+import { useDispatch, useSelector } from 'react-redux';
 
 const WIN_PATTERNS = [
 	[0, 1, 2],
@@ -21,23 +27,12 @@ const checkWinner = (fields, currentPlayer) => {
 };
 
 export const Button = ({ i, item }) => {
-	const [state, setState] = useState(store.getState());
-	const { fields, currentPlayer, isDraw, isGameEnded } = store.getState();
+	const dispatch = useDispatch();
 
-	useEffect(() => {
-		const unsubscribe = store.subscribe(() => {
-			setState(store.getState());
-			return () => {
-				unsubscribe();
-			};
-		});
-	}, []);
-
-	const setPlayerFields = i => {
-		const playerFields = fields.slice();
-		playerFields[i] = currentPlayer;
-		return playerFields;
-	};
+	const fields = useSelector(fieldsSelector);
+	const currentPlayer = useSelector(currentPlayerSelector);
+	const isDraw = useSelector(isDrawSelector);
+	const isGameEnded = useSelector(isGameEndedSelector);
 
 	const setCurrentPlayer = () => {
 		return currentPlayer === String.fromCharCode(10008)
@@ -45,32 +40,31 @@ export const Button = ({ i, item }) => {
 			: String.fromCharCode(10008);
 	};
 
-	const setIsDraw = () => {
-		return !store.getState().fields.includes('');
+	const setIsDraw = fields => {
+		return !fields.includes('');
 	};
 
 	const currentPlayerTurn = i => {
 		if (isGameEnded || isDraw || fields[i] !== '') {
 			return;
 		}
+		const playerFields = fields.slice();
+		playerFields[i] = currentPlayer;
 
-		store.dispatch({ type: 'SET_FIELDS', payload: setPlayerFields(i) });
+		dispatch({ type: 'SET_FIELDS', payload: playerFields });
 
-		store.dispatch({
+		dispatch({
 			type: 'SET_IS_GAME_ENDED',
-			payload: checkWinner(
-				store.getState().fields,
-				store.getState().currentPlayer
-			),
+			payload: checkWinner(playerFields, currentPlayer),
 		});
-		if (!checkWinner(store.getState().fields, currentPlayer)) {
-			store.dispatch({
+		if (!checkWinner(playerFields, currentPlayer)) {
+			dispatch({
 				type: 'SET_CURRENT_PLAYER',
-				payload: setCurrentPlayer(),
+				payload: setCurrentPlayer(currentPlayer),
 			});
-			store.dispatch({
+			dispatch({
 				type: 'SET_IS_DRAW',
-				payload: setIsDraw(),
+				payload: setIsDraw(playerFields),
 			});
 		}
 	};
@@ -87,6 +81,6 @@ export const Button = ({ i, item }) => {
 
 Button.propTypes = {
 	item: PropTypes.string,
-	playerClick: PropTypes.func,
+	currentPlayerTurn: PropTypes.func,
 	index: PropTypes.number,
 };
